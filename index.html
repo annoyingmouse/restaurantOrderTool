@@ -1,0 +1,194 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="./css/bootstrap.css" />
+        <link rel="stylesheet" href="./css/bootstrap-responsive.css" />
+        <link rel="stylesheet" href="./css/main.css" />
+        <link rel="stylesheet" href="./css/TableTools.css" />
+        <title>Curry Garden</title>
+    </head>
+    <body>
+        <div class="navbar navbar-fixed-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="https://googledrive.com/host/0ByRgQIhodQXfaVdHOElsZTV5c3c/menu/">Curry Garden Menu</a>
+                    <div class="nav-collapse">
+                        <ul class="nav" id="siteLinks"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <section id="content">
+                <ul id="myTab" class="nav nav-tabs">
+                    <li class="active"><a href="#TOTAL" data-toggle="tab">TOTAL</a></li>
+                </ul>
+                <div id="myTabContent" class="tab-content">
+                    <div class="tab-pane fade in active" id="TOTAL">
+                        <h1>TOTAL: £<span id="totalOrder">0.00</span></h1>
+                        <table id="order" class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Cost</th>
+                                    <th>Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <script src="./js/jquery.js"></script>
+        <script src="./js/jquery-ui.js"></script>
+        <script src="./js/bootstrap.js"></script>
+        <script src="./js/jsrender.js"></script>
+        <script src="./js/functions.js"></script>
+        <script src="./js/jquery.csv-0.71.js"></script>
+        <script src="./js/jquery.dataTables.js"></script>
+        <script src="./js/DT_bootstrap.js"></script>
+        <script src="./js/ZeroClipboard.js"></script>
+        <script src="./js/TableTools.js"></script>
+        <script>
+            var items = [];
+            var categories = [];
+            var totalOrder = 0.00;
+            var order = [];
+            var oTable;
+            $(function(){
+                oTable = $("#order").dataTable({
+                    "aaData": order,
+                    "bJQueryUI": false,
+                    "bAutoWidth": false,
+                    "sPaginationType": "bootstrap",
+                    "aaSorting": [[0, 'asc']],
+                    "bDestroy": true,
+                    "aoColumns": [
+                        { "mDataProp": "what", "sTitle": "Item"},
+                        { "mDataProp": "cost", "sTitle": "Cost"},
+                        { "mDataProp": "quantity", "sTitle": "Quantity"}
+                    ],
+                    "aoColumnDefs": [ {
+                        "aTargets": [1],
+                        "fnCreatedCell": function (nTd) {
+                            $(nTd).prepend("£");
+                        }
+                    } ],
+                    "sDom": 'T<"clearfix"><"row"<"span6"l><"span6"f>>t<"row"<"span6"i><"span6"p>>',
+                    "oTableTools": {
+                        "sSwfPath": "./swf/copy_csv_xls_pdf.swf"
+                    }
+                });
+                $.ajax({
+                    dataType: "json",
+                    url: "https://spreadsheets.google.com/feeds/list/0AiRgQIhodQXfdGdkVDVTRUFsN09sbFhYVVEzYlZMMXc/od6/public/values?alt=json",
+                    success: function(data){
+                        $.each(data.feed.entry, function(k, v){
+                            var item = {};
+                            item.category = v.gsx$category.$t;
+                            item.categorylong = v.gsx$categorylong.$t;
+                            if($.inArray(item.category, categories) === -1){
+                                categories.push(item.category);
+                                $("#myTab").append($("#addTab").render(item));
+                                $("#myTabContent").append($("#addPane").render(item));
+                            }
+                            item.item = v.gsx$item.$t;
+                            item.cost = v.gsx$cost.$t;
+                            item.description = v.gsx$description.$t;
+                            items.push(item);
+                        });
+                        $.each(items, function(k, v){
+                            $("#"+v.category).append($("#addItem").render(v));
+                        });
+                        $(".tip").tooltip();
+                    }
+                });
+                $("#content").on("click", ".item", function(e){
+                    var $this = $(this);
+                    var itemCost = parseFloat($this.data("price"));
+                    var itemText = $this.data("text");
+                    var alreadyOnOrder = false;
+                    var numberOrdered = 1;
+                    if($(e.target).hasClass("reduceOrder")){
+                        if(parseInt($this.attr("data-quantity"), 10) > 0){
+                            numberOrdered = parseInt($this.attr("data-quantity"));
+                            numberOrdered--;
+                            $this.attr("data-quantity",numberOrdered);
+                            $this.find(".numberOrdered").text(numberOrdered);
+                            var removeItem = false;
+                            var itemToRemove = null;
+                            $.each(order, function(k, v){
+                                if(v.what === itemText){
+                                    v.quantity = numberOrdered;
+                                    if(numberOrdered === 0){
+                                        removeItem = true;
+                                        itemToRemove = k;
+                                    }
+                                }
+                            });
+                            if(removeItem){
+                                order.splice(itemToRemove, 1);
+                                $this.find(".reduceOrder").hide();
+                            }
+                            oTable.fnClearTable();
+                            oTable.fnAddData(order);
+                            $("#totalOrder").text(reDrawTable(order).toFixed(2));
+                            $this.data("quantity",numberOrdered);
+                        }
+                    }else{
+                        $.each(order, function(k, v){
+                            if(v.what === itemText){
+                                v.quantity++;
+                                numberOrdered = v.quantity;
+                                alreadyOnOrder = true;
+                            }
+                        });
+                        if(!alreadyOnOrder){
+                            var newItem = {};
+                            newItem.what = itemText;
+                            newItem.cost = itemCost.toFixed(2);
+                            newItem.quantity = 1;
+                            order.push(newItem);
+                        }
+                        $this.find(".numberOrdered").text(numberOrdered);
+                        $("#totalOrder").text(reDrawTable(order).toFixed(2));
+                        $this.attr("data-quantity", numberOrdered);
+                        oTable.fnClearTable();
+                        oTable.fnAddData(order);
+                        if(!$(this).find(".reduceOrder").is(":visible")){
+                            $(this).find(".reduceOrder").show();
+                        }
+                    }
+                });
+            });
+            function reDrawTable(o){
+                var totalOrder = 0.00;
+                $.each(o, function(k, v){
+                    totalOrder += v.cost * v.quantity;
+                });
+                return totalOrder;
+            }
+        </script>
+        <script id="addTab" type="x/js-render">
+            <li><a href="#{{:category}}" data-toggle="tab" title="{{:categorylong}}" class="tip">{{:category}}</a></li>
+        </script>
+        <script id="addPane" type="x/js-render">
+            <div id="{{:category}}" class="tab-pane fade">
+                <h1>{{:categorylong}}:</h1>
+            </div>
+        </script>
+        <script id="addItem" type="x/js-render">
+            <span class="btn btn-large span3 item tip" data-price="{{:cost}}" data-quantity="0" data-text="{{:item}}" title="{{:description}}">{{:item}}
+                <span class="numberOrdered">0</span>
+                <span class="reduceOrder" style="display:none;"></span>
+            </span>
+        </script>
+    </body>
+</html>

@@ -1,0 +1,42 @@
+/**
+ * Created with JetBrains PhpStorm.
+ * User: Dominic
+ * Date: 27/04/13
+ * Time: 12:56
+ * To change this template use File | Settings | File Templates.
+ */
+body {
+    padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+}
+.item {
+    margin-bottom: 40px;
+    min-height: 40px;
+    position: relative;
+}
+.numberOrdered{
+    position: absolute;
+    right: -10px;
+    top: -10px;
+    border-radius: 50%;
+    background-color: #e6e6e6;
+    width: 20px;
+    height: 20px;
+    border: 1px solid #c5c5c5;
+    font-size: small;
+}
+.reduceOrder{
+    position: absolute;
+    right: -13px;
+    bottom: -13px;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    background-color: #FCCCCC;
+    border: 1px solid #FC6666;
+}
+#order_filter, .dataTables_paginate {
+    float:right;
+}
+.dataTables_paginate{
+    margin:0;
+}
