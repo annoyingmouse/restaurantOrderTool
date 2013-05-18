@@ -14,6 +14,7 @@ Resources
 * [Bootstrap](http://twitter.github.io/bootstrap/)
 * [jQuery](http://jquery.com/)
 * [DataTable](http://datatables.net/)
+* [JsRender](https://github.com/BorisMoore/jsrender)
 
 Future
 ------
