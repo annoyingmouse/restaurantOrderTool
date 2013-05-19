@@ -35,6 +35,7 @@
                         <table id="order" class="table table-striped table-bordered">
                             <thead>
                                 <tr>
+                                    <th>Category</th>
                                     <th>Item</th>
                                     <th>Cost</th>
                                     <th>Quantity</th>
@@ -68,19 +69,20 @@
                     "bJQueryUI": false,
                     "bAutoWidth": false,
                     "sPaginationType": "bootstrap",
-                    "aaSorting": [[0, 'asc']],
+                    "aaSorting": [[0, 'desc']],
                     "bDestroy": true,
                     "aoColumns": [
+                        { "mDataProp": "category", "sTitle": "Category"},
                         { "mDataProp": "what", "sTitle": "Item"},
                         { "mDataProp": "cost", "sTitle": "Cost"},
                         { "mDataProp": "quantity", "sTitle": "Quantity"}
                     ],
-                    "aoColumnDefs": [ {
-                        "aTargets": [1],
+                    "aoColumnDefs": [{
+                        "aTargets": [2],
                         "fnCreatedCell": function (nTd) {
                             $(nTd).prepend("£");
                         }
-                    } ],
+                    }],
                     "sDom": 'T<"clearfix"><"row"<"span6"l><"span6"f>>t<"row"<"span6"i><"span6"p>>',
                     "oTableTools": {
                         "sSwfPath": "./swf/copy_csv_xls_pdf.swf"
@@ -114,6 +116,7 @@
                     var $this = $(this);
                     var itemCost = parseFloat($this.data("price"));
                     var itemText = $this.data("text");
+                    var itemCategory = ($this.data("category") === "STRT") ? "STARTER" : "MAIN";
                     var alreadyOnOrder = false;
                     var numberOrdered = 1;
                     if($(e.target).hasClass("reduceOrder")){
@@ -125,7 +128,7 @@
                             var removeItem = false;
                             var itemToRemove = null;
                             $.each(order, function(k, v){
-                                if(v.what === itemText){
+                                if(v.what === itemText && v.category === itemCategory){
                                     v.quantity = numberOrdered;
                                     if(numberOrdered === 0){
                                         removeItem = true;
@@ -144,7 +147,7 @@
                         }
                     }else{
                         $.each(order, function(k, v){
-                            if(v.what === itemText){
+                            if(v.what === itemText && v.category === itemCategory){
                                 v.quantity++;
                                 numberOrdered = v.quantity;
                                 alreadyOnOrder = true;
@@ -155,6 +158,7 @@
                             newItem.what = itemText;
                             newItem.cost = itemCost.toFixed(2);
                             newItem.quantity = 1;
+                            newItem.category = itemCategory;
                             order.push(newItem);
                         }
                         $this.find(".numberOrdered").text(numberOrdered);
@@ -185,7 +189,7 @@
             </div>
         </script>
         <script id="addItem" type="x/js-render">
-            <span class="btn btn-large span3 item tip" data-price="{{:cost}}" data-quantity="0" data-text="{{:item}}" title="{{:description}}">{{:item}}
+            <span class="btn btn-large span3 item tip" data-category="{{:category}}" data-price="{{:cost}}" data-quantity="0" data-text="{{:item}}" title="{{:description}}">{{:item}}
                 <span class="numberOrdered">0</span>
                 <span class="reduceOrder" style="display:none;"></span>
             </span>
